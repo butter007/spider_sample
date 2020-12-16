@@ -1,13 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-proxies = {"http","http://193.38.51.182:55555"}
-res = requests.get("http://httpbin.org/ip",proxies=proxies)
-print(res.text)
-"""
+proxies = {"http":"http://193.38.51.182:55555"}
+res = requests.get("http://xiachufang.com",proxies=proxies)
 
-res = requests.get("http://httpbin.org/ip",)
-print(res.json())
+soup = BeautifulSoup(res.text,"lxml")
+print(soup.prettify())
 
-soup = BeautifulSoup(res.text)
-soup.prettyfy()
-"""
