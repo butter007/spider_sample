@@ -1,12 +1,14 @@
 import requests
 import os
 from lxml import etree
+import time
 
 
 # 请求url获取结果
 def fetch(url, headers, proxies):
-    res = requests.get(url, headers, proxies)
+    res = requests.get(url, headers=headers)
     if res.status_code != 200:
+        print(res.status_code)
         res.raise_for_status()
     return res.text
 
@@ -16,7 +18,6 @@ def getpages(str):
     numbers = [40076, 40077, 40078, 51848, 52354, 51743, 52351, 51940]
     pages = []
     for number in numbers:
-        print(number)
         for page in range(1, 26):
             url = "%s%s/?page=%s" % (url_start, number, page)
             pages.append(url)
@@ -26,7 +27,8 @@ def getpages(str):
 def getimglinks(pageurl, headers, proxies):
     li = []
     pagecon = fetch(pageurl, headers, proxies)
-    selector = pagecon.xpath("//div[@class='cover pure-u']/img/@data-src")
+    re = etree.HTML(pagecon)
+    selector = re.xpath("//div[@class='cover pure-u']/img/@data-src")
     for item in selector:
         li.append(item.split('?')[0])
     return li
@@ -34,8 +36,6 @@ def getimglinks(pageurl, headers, proxies):
 
 # 下载页面
 def download_pic(imgurl, headers, proxies, filepath):
-    if not os.path.exists(filepath):
-        os.makedirs(filepath)
     r = requests.get(imgurl, headers, proxies)
     with open(os.path.join(filepath, imgurl.split("/")[-1]), "wb") as fp:
         for chunk in r.iter_content(chunk_size=1024):
@@ -43,6 +43,7 @@ def download_pic(imgurl, headers, proxies, filepath):
 
 
 if __name__ == "__main__":
+    starttime = time.time()
     url_start = "https://www.xiachufang.com/category/"
     proxies = {"http": "http://193.38.51.182:55555"}
     headers = {
@@ -51,7 +52,12 @@ if __name__ == "__main__":
         "Referer": "https://pos.baidu.com/"
     }
     filepath = "D:\\xiachufang"
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
     links = []
     for item in getpages(url_start):
         links.extend(getimglinks(item, headers, proxies))
-    print(links)
+    for imgurl in links:
+        print(imgurl)
+        download_pic(imgurl, headers, proxies, filepath)
+    print("time last", time.time()-starttime)
