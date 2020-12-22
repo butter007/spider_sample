@@ -6,7 +6,7 @@ import time
 
 # 请求url获取结果
 def fetch(url, headers, proxies):
-    res = requests.get(url, headers=headers)
+    res = requests.get(url, headers=headers, proxies=proxies)
     if res.status_code != 200:
         print(res.status_code)
         res.raise_for_status()
@@ -36,7 +36,7 @@ def getimglinks(pageurl, headers, proxies):
 
 # 下载页面
 def download_pic(imgurl, headers, proxies, filepath):
-    r = requests.get(imgurl, headers, proxies)
+    r = requests.get(imgurl, headers=headers, proxies=proxies)
     with open(os.path.join(filepath, imgurl.split("/")[-1]), "wb") as fp:
         for chunk in r.iter_content(chunk_size=1024):
             fp.write(chunk)
@@ -60,4 +60,4 @@ if __name__ == "__main__":
     for imgurl in links:
         print(imgurl)
         download_pic(imgurl, headers, proxies, filepath)
-    print("time last", time.time()-starttime)
+    print("time last", time.time() - starttime)
