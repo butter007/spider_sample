@@ -24,7 +24,7 @@ def fetch(url, headers, proxies):
 
 # 根据大类获取每一类的页面加入links
 def getpages(str):
-    numbers = [40076, 40077, 40078, 51848, 52354, 51743, 52351, 51940]
+    numbers = [40078, 40077, 40078, 51848, 52354, 51743, 52351, 51940]
     pages = []
     for number in numbers:
         for page in range(1, 26):
@@ -82,12 +82,14 @@ if __name__ == "__main__":
     # download_pic(imgurl, headers, proxies, filepath)
     # 启动线程，并将线程对象放入一个列表保存
     for i in range(threads_num):
-        t = threading.Thread(target=download(headers, proxies, filepath))
+        t = threading.Thread(target=download,
+                             args=(headers, proxies, filepath))
+        t.daemon = True
         t.start()
         threads.append(t)
     # 阻塞队列，知道队列被清空
     link_queue.join()
-    # 向队列放松N个None，以通知线程退出
+    # 向队列放入N个None，以通知线程退出
     for i in range(threads_num):
         link_queue.put(None)
     # 退出线程
