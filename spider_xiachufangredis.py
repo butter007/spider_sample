@@ -5,12 +5,14 @@ import time
 import threading
 from queue import Queue
 import redis
+import signal
 
 link_queue = Queue()
 threads_num = 10
 threads = []
 download_pages = 0
-r = redis.Redis()
+r = redis.Redis(host="193.38.51.182")
+thread_on = True
 
 
 # 请求url获取结果
@@ -53,15 +55,23 @@ def download_pic(imgurl, headers, proxies, filepath):
             fp.write(chunk)
 
 
-def download(headers, proxies, filepath):
-    while True:
+def download(i, headers, proxies):
+    while thread_on:
         # 阻塞直到从队列里获取一条消息
         link = r.lpop("qianmu.queue")
-        if link is None:
-            break
-        download_pic(link, headers, proxies, filepath)
-        link_queue.task_done()
-        print("remaining queue: %s" % link_queue.qsize())
+        print(link)
+        if link:
+            # download_pic(link, headers, proxies, filepath)
+            # link_queue.task_done()
+            print("remaining queue: %s" % r.llen('qianmu.queue'))
+        time.sleep(0.2)
+    print("thread-%s exit now" % i)
+
+
+def sigint_handler(signum, frame):
+    print("received Ctrl+C, wait for exit grcefully")
+    global thread_on
+    thread_on = False
 
 
 if __name__ == "__main__":
@@ -73,9 +83,9 @@ if __name__ == "__main__":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
         "Referer": "https://pos.baidu.com/"
     }
-    filepath = "D:\\xiachufang"
-    if not os.path.exists(filepath):
-        os.makedirs(filepath)
+    # filepath = "D:\\xiachufang"
+    # if not os.path.exists(filepath):
+    #     os.makedirs(filepath)
     links = []
     for item in getpages(url_start):
         links.extend(getimglinks(item, headers, proxies))
@@ -85,9 +95,11 @@ if __name__ == "__main__":
     # download_pic(imgurl, headers, proxies, filepath)
     # 启动线程，并将线程对象放入一个列表保存
     for i in range(threads_num):
-        t = threading.Thread(target=download(headers, proxies, filepath))
+        t = threading.Thread(target=download, args=(i + 1, headers, proxies))
         t.start()
         threads.append(t)
+
+    signal.signal(signal.SIGINT, sigint_handler)
     # 阻塞队列，知道队列被清空
     link_queue.join()
     # 向队列放松N个None，以通知线程退出
